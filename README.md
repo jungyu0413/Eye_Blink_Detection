@@ -8,7 +8,7 @@ This module focuses specifically on detecting eye blinks in real time as a key p
 
 ---
 
-## 🧠 Description
+## Description
 
 - Detects eye blinks from live camera input
 - Optimized for lightweight, real-time execution
