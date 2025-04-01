@@ -4,7 +4,11 @@ This repository provides the eye-blink detection module that was part of the pap
 **"Study on Facial Composite Feature Analysis for Determining Subject Anxiety Levels on Low-Power Computing Modules"**,  
 presented at the **Summer Annual Conference of IEIE, 2024**.
 
-This module focuses specifically on detecting eye blinks in real time as a key physiological signal for estimating subject anxiety levels. The full system was designed to operate efficiently on low-power edge devices, such as embedded boards and real-time camera setups.
+This module focuses specifically on detecting eye blinks in real time as a key physiological signal for estimating subject anxiety levels.  
+The full system was designed to operate efficiently on low-power edge devices, such as embedded boards and real-time camera setups.
+
+Our blink detection approach is built on facial landmark detection, based on [**Pixel-in-Pixel Net**](https://arxiv.org/abs/2003.03771) — a highly efficient and accurate method for facial keypoint localization in unconstrained environments.  
+By leveraging this lightweight landmark detector, our system achieves both speed and robustness for deployment in real-world, resource-constrained scenarios.
 
 ---
 
