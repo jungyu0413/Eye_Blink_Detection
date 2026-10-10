@@ -1,0 +1,258 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Facial Composite Features for Anxiety Estimation</title>
+<meta name="description" content="Contact-free anxiety estimation from eye blinks, pupil movement and facial expressions on low-power hardware. IEIE Summer Annual Conference 2024.">
+<meta property="og:title" content="Study on Facial Composite Feature Analysis for Determining Subject Anxiety Levels on Low-Power Computing Modules">
+<meta property="og:image" content="https://jungyu0413.github.io/Eye_Blink_Detection/static/overview.jpg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Familjen+Grotesk:wght@500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&family=JetBrains+Mono:wght@400;600&display=swap">
+<style>
+/* Same system as the MoRE page: one 1180px container, display grotesk + text serif, dark "decks" for media.
+   Colours come from the paper's Fig. 1 legend (clean / ambiguous / noisy). */
+:root {
+  --bg: #f6f6f3; --surface: #ffffff; --ink: #16191d; --muted: #5b626b; --line: #dcdcd6;
+  --deck: #101316; --deck-2: #1b2024; --deck-line: #2c3338; --deck-ink: #eef0ee; --deck-muted: #9aa3a8;
+  --accent: #e0483e; --teal: #1f9e8f;
+  --f-display: "Familjen Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --f-body: "Source Serif 4", Georgia, "Times New Roman", serif;
+  --f-mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --container: 1180px; --measure: 70ch;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) { --bg: #0f1214; --surface: #171b1e; --ink: #e9ecea; --muted: #9ba3a8; --line: #2a3034; color-scheme: dark; }
+}
+:root[data-theme="dark"] { --bg: #0f1214; --surface: #171b1e; --ink: #e9ecea; --muted: #9ba3a8; --line: #2a3034; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 400 1.075rem/1.62 var(--f-body); margin: 0; }
+.page { max-width: var(--container); margin-inline: auto; padding-inline: 24px; }
+@media (max-width: 520px) { .page { padding-inline: 16px; } }
+h1, h2, h3 { font-family: var(--f-display); text-wrap: balance; line-height: 1.12; margin: 0; letter-spacing: -0.01em; }
+h2 { font-size: clamp(1.5rem, 1.1rem + 1.4vw, 2.05rem); font-weight: 700; }
+h3 { font-size: 1.12rem; font-weight: 600; }
+p { margin: 0; text-wrap: pretty; }
+a { color: inherit; text-decoration-color: var(--accent); text-underline-offset: 3px; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+code { font-family: var(--f-mono); font-size: 0.88em; }
+.eyebrow { font: 600 0.74rem/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+section { padding-block: clamp(40px, 6vw, 64px); border-top: 1px solid var(--line); display: grid; gap: clamp(18px, 2.5vw, 26px); }
+.intro { display: grid; gap: 12px; max-width: 80ch; }
+.prose { max-width: var(--measure); display: grid; gap: 14px; }
+.muted { color: var(--muted); }
+
+/* hero */
+.hero { padding-block: 56px 32px; display: grid; gap: 18px; }
+.hero h1 { font-size: clamp(1.75rem, 1.1rem + 2.5vw, 3rem); font-weight: 700; max-width: 1000px; }
+.hero .sub { font-family: var(--f-display); font-size: clamp(1.05rem, 0.98rem + 0.4vw, 1.28rem); line-height: 1.5; color: var(--muted); max-width: 64ch; }
+.hero .sub b { color: var(--ink); }
+.venue { display: inline-flex; gap: 8px; align-items: center; font: 600 0.78rem/1 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase;
+  border: 1px solid var(--line); border-radius: 999px; padding: 7px 12px; justify-self: start; background: var(--surface); }
+.venue i { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+.authors { display: flex; flex-wrap: wrap; gap: 4px 26px; font: 600 1.08rem/1.4 var(--f-display); }
+.authors a { text-decoration: none; border-bottom: 2px solid transparent; }
+.authors a:hover { border-bottom-color: var(--accent); }
+.authors sup, .affil sup { font: 600 0.72rem/1 var(--f-mono); color: var(--muted); margin-left: 2px; }
+.affil { display: flex; flex-wrap: wrap; gap: 4px 22px; color: var(--muted); font: 500 0.95rem/1.4 var(--f-display); }
+.links { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px; border-radius: 999px; border: 1px solid var(--line);
+  background: var(--surface); color: var(--ink); font: 600 0.9rem/1 var(--f-display); text-decoration: none; cursor: pointer; }
+.btn:hover { border-color: var(--ink); }
+.btn .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); }
+
+/* decks: dark media frames, identical in both themes */
+.deck { background: var(--deck); color: var(--deck-ink); border-radius: 16px; padding: 14px; display: grid; gap: 10px; }
+.deck video, .deck img { width: 100%; display: block; border-radius: 10px; background: #000; }
+.deck.light { background: #fff; }
+.deck.light img { background: #fff; border-radius: 6px; }
+.cap { color: var(--deck-muted); font: 400 0.84rem/1.5 var(--f-mono); padding: 0 4px; }
+figure { margin: 0; display: grid; gap: 10px; }
+figcaption { color: var(--muted); font: 400 0.86rem/1.55 var(--f-mono); max-width: 110ch; }
+
+/* abstract */
+@media (min-width: 760px) { .abstract p { text-align: justify; } }
+
+/* demo */
+.demo { display: grid; gap: 14px; }
+.demo-grid { display: grid; grid-template-columns: minmax(0, 1.65fr) minmax(0, 1fr); gap: 14px; align-items: stretch; }
+@media (max-width: 900px) { .demo-grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--deck-2); border: 1px solid var(--deck-line); border-radius: 12px; padding: 16px; display: grid; gap: 14px; align-content: start; }
+.panel .lab { font: 600 0.7rem/1 var(--f-mono); letter-spacing: 0.12em; text-transform: uppercase; color: var(--deck-muted); }
+.bars { display: grid; gap: 7px; }
+.bar { display: grid; grid-template-columns: 82px minmax(0, 1fr) 44px; gap: 10px; align-items: center; font: 500 0.82rem/1 var(--f-mono); color: var(--deck-ink); }
+.bar .track { display: block; height: 12px; border-radius: 6px; background: #252b30; overflow: hidden; }
+.bar .fill { display: block; height: 100%; width: 0; border-radius: 6px; transition: width 80ms linear; }
+.bar .pct { text-align: right; color: var(--deck-muted); font-variant-numeric: tabular-nums; }
+.bar.top { color: #fff; }
+.bar.top .pct { color: #fff; }
+.amb { display: grid; grid-template-columns: 170px minmax(0, 1fr); gap: 14px; align-items: center; }
+.amb svg { width: 170px; height: 170px; display: block; }
+.amb-read { display: grid; gap: 6px; font: 500 0.82rem/1.45 var(--f-mono); color: var(--deck-muted); }
+.amb-read b { color: var(--deck-ink); font-weight: 600; }
+.state { display: inline-flex; align-items: center; gap: 8px; font: 600 0.78rem/1 var(--f-mono); letter-spacing: 0.06em; text-transform: uppercase;
+  border-radius: 999px; padding: 6px 10px; border: 1px solid var(--deck-line); color: var(--deck-ink); justify-self: start; }
+.state i { width: 9px; height: 9px; border-radius: 50%; background: var(--deck-muted); }
+.clips { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+@media (max-width: 640px) { .clips { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.clips button { all: unset; cursor: pointer; display: grid; gap: 6px; border-radius: 10px; padding: 6px; border: 1px solid var(--deck-line); background: var(--deck-2); }
+.clips button img { width: 100%; aspect-ratio: 16/9; object-fit: cover; border-radius: 6px; display: block; }
+.clips button span { font: 600 0.78rem/1.2 var(--f-display); color: var(--deck-ink); text-align: center; }
+.clips button[aria-pressed="true"] { border-color: var(--deck-ink); box-shadow: 0 0 0 1px var(--deck-ink) inset; }
+.clips button:focus-visible { outline: 3px solid var(--accent); }
+
+/* method cards */
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 860px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 18px; display: grid; gap: 8px; align-content: start; }
+.card .k { font: 600 0.72rem/1 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.card p { font-size: 0.98rem; }
+
+/* tables */
+.tablewrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font: 500 0.9rem/1.3 var(--f-display); font-variant-numeric: tabular-nums; }
+th, td { padding: 10px 12px; text-align: center; white-space: nowrap; border-bottom: 1px solid var(--line); }
+th:first-child, td:first-child { text-align: left; }
+thead th { font: 600 0.72rem/1.2 var(--f-mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+tbody tr:last-child td { border-bottom: 0; }
+
+.minor { color: var(--muted); font-size: 0.85em; }
+details { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 14px 16px; }
+details summary { cursor: pointer; font: 600 0.98rem/1.3 var(--f-display); }
+details[open] summary { margin-bottom: 14px; }
+details .tablewrap { border: 0; }
+.stats { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .stats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.stat { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: grid; gap: 4px; }
+.stat b { font: 700 1.9rem/1 var(--f-display); }
+.stat span { color: var(--muted); font: 500 0.84rem/1.35 var(--f-display); }
+
+/* bibtex */
+pre.bib { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px; overflow-x: auto; font: 400 0.86rem/1.55 var(--f-mono); margin: 0; }
+footer { padding-block: 32px 48px; border-top: 1px solid var(--line); color: var(--muted); font: 400 0.84rem/1.6 var(--f-mono); display: grid; gap: 8px; }
+footer a { color: inherit; }
+
+/* news */
+.news { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 900px) { .news { grid-template-columns: minmax(0, 1fr); } }
+.news .item { background: var(--surface); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; display: grid; grid-template-rows: auto 1fr; text-decoration: none; color: inherit; }
+.news .media { aspect-ratio: 16/9; background: #000; position: relative; }
+.news .media img, .news .media iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; object-fit: cover; display: block; }
+.news .media img { object-fit: contain; background: #fff; padding: 18px; }
+.news .meta { padding: 14px 16px 16px; display: grid; gap: 6px; align-content: start; }
+.news .src { font: 600 0.72rem/1 var(--f-mono); letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.news .ttl { font: 600 1.02rem/1.35 var(--f-display); }
+.news .ko { color: var(--muted); font: 500 0.9rem/1.4 var(--f-display); }
+.news a.item:hover .ttl { text-decoration: underline; text-decoration-color: var(--accent); }
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: center; }
+@media (max-width: 860px) { .split { grid-template-columns: minmax(0, 1fr); } }
+.ko-title { color: var(--muted); font: 500 1.05rem/1.45 var(--f-display); max-width: 70ch; }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="hero">
+    <span class="venue"><i></i>IEIE Summer Annual Conference 2024</span>
+    <h1>Study on Facial Composite Feature Analysis for Determining Subject Anxiety Levels on Low-Power Computing Modules</h1>
+    <p class="ko-title">저연산 컴퓨팅 모듈에서 구동 가능한 안면 복합 특성 분석 기반 대상자 긴장 상태 판단에 관한 연구</p>
+    <p class="sub">A contact-free system that reads <b>eye blinks</b>, <b>pupil movement</b> and <b>facial expressions</b> from an ordinary RGB camera and combines them into a single <b>anxiety score</b>, light enough to run on low-end hardware.</p>
+    <div class="authors">
+      <a href="https://jungyu0413.github.io/">JunGyu Lee<sup>1,2</sup></a>
+      <span>Sanghyun Alex Lee<sup>1</sup></span>
+      <a href="https://vig.kist.re.kr">Gi Pyo Nam<sup>1,2</sup></a>
+    </div>
+    <div class="affil">
+      <span><sup>1</sup>Korea Institute of Science and Technology</span>
+      <span><sup>2</sup>AI-Robotics, KIST School, UST</span>
+    </div>
+    <div class="links">
+      <a class="btn" href="https://www.dbpia.co.kr/Journal/articleDetail?nodeId=NODE11890880"><span class="dot"></span>Paper</a>
+      <a class="btn" href="https://github.com/jungyu0413/Eye_Blink_Detection">Code</a>
+      <a class="btn" href="#demo">Real-time demo</a>
+      <a class="btn" href="#news">In the news</a>
+      <a class="btn" href="#bibtex">BibTeX</a>
+    </div>
+  </header>
+
+  <div class="deck" style="margin-bottom: 28px">
+    <video src="static/overview.mp4" poster="static/overview.jpg" autoplay muted loop playsinline></video>
+    <p class="cap">Eye-blink detection with the eye aspect ratio (EAR). Six eye landmarks give EAR per frame; a blink is counted when EAR drops below a threshold set from the subject's own mean and recovers.</p>
+  </div>
+
+  <section class="abstract">
+    <div class="intro"><span class="eyebrow">Abstract</span><h2>Reading anxiety from the face, without contact</h2></div>
+    <p>Recent studies have utilized external biosignals, particularly those observable on the human face such as expressions and eye blinks, for the analysis of a subject’s level of anxiety. This paper presents the first comprehensive system for contact-free prediction of various facial features from RGB images, surpassing traditional methods reliant on prior knowledge or significant computing power. Our approach introduces modules for analyzing variations in facial features, such as eye blinks, pupil movement, and expressions, developed to operate effectively in low-end hardware environments with limited computing power. Each module has been validated on its respective benchmark dataset, demonstrating comparability with or even exceeding the State-Of-The-Art. A method for deriving a composite anxiety score based on the combination of biological signal changes is further proposed, with additional validation on a privately-conducted user study.</p>
+  </section>
+
+  <section>
+    <div class="intro"><span class="eyebrow">System</span><h2>Three facial signals, one score</h2>
+      <p class="muted">Each module runs on its own lightweight model so the whole pipeline fits on a low-power computing module next to the camera.</p></div>
+    <div class="cards">
+      <div class="card"><span class="k">01 · Eye blinks</span><h3>Blink rate from landmarks</h3><p>Facial landmarks from a lightweight Pixel-in-Pixel network give six points per eye; the eye aspect ratio turns them into a per-frame openness signal and a blink count.</p></div>
+      <div class="card"><span class="k">02 · Pupil movement</span><h3>Gaze and pupil changes</h3><p>Movement of the pupils between frames is analysed as a second facial signal.</p></div>
+      <div class="card"><span class="k">03 · Expression</span><h3>Facial expression recognition</h3><p>A compact expression classifier reads the facial expression in every frame.</p></div>
+    </div>
+    <p class="prose">Changes in the three signals are combined into a composite anxiety score. Each module was validated on its own benchmark, and the composite score was further validated in a private user study.</p>
+  </section>
+
+  <section id="demo">
+    <div class="intro"><span class="eyebrow">Demo</span><h2>Real-time blink detection on a webcam</h2>
+      <p class="muted">The released eye-blink module running live: face detection, landmark localisation and a running blink count, all in real time.</p></div>
+    <div class="split">
+      <div class="deck"><video src="static/realtime.mp4" poster="static/realtime.jpg" autoplay muted loop playsinline></video></div>
+      <div class="prose">
+        <p>The module keeps per-subject statistics of the eye aspect ratio, so the blink threshold adapts to each person instead of using one fixed value.</p>
+        <p>Because it needs only landmarks from a single RGB frame, it runs on embedded boards and plugs directly into the anxiety-estimation pipeline above.</p>
+        <p><a class="btn" href="https://github.com/jungyu0413/Eye_Blink_Detection">Run it yourself</a></p>
+      </div>
+    </div>
+  </section>
+
+  <section id="news">
+    <div class="intro"><span class="eyebrow">In the news</span><h2>Featured in national media</h2>
+      <p class="muted">The research was covered by a national newspaper and two national broadcasters, including reports on detection technology at customs.</p></div>
+    <div class="news">
+      <a class="item" href="https://www.chosun.com/economy/science/2023/07/27/CTQOEOWBRRFHBKFVO7P34P5QGM/">
+        <div class="media"><img src="static/chosun.jpg" alt="Chosun Ilbo article: AI, reading inner feelings" loading="lazy"></div>
+        <div class="meta"><span class="src">Chosun Ilbo · Jul 2023</span><span class="ttl">AI, reading inner feelings</span><span class="ko">AI, 속마음을 읽다</span></div>
+      </a>
+      <div class="item">
+        <div class="media"><iframe src="https://www.youtube-nocookie.com/embed/v42dA6POA84?start=144" title="MBC Newsdesk report" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+        <div class="meta"><span class="src">MBC Newsdesk · May 2023</span><span class="ttl">On-site report: drugs, from inflow to distribution — can they be stopped?</span><span class="ko">[현장검증] 마약, 유입부터 유통까지‥막을 수 있나?</span></div>
+      </div>
+      <div class="item">
+        <div class="media"><iframe src="https://www.youtube-nocookie.com/embed/Ey1pFt8AXhQ?start=31" title="JTBC News report" loading="lazy" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+        <div class="meta"><span class="src">JTBC News · D:Issue · Apr 2023</span><span class="ttl">Customs' cutting-edge detection technology on the front line of the “war on drugs”</span><span class="ko">‘마약과의 전쟁’ 일선에 선 세관의 최첨단 탐지 기술</span></div>
+      </div>
+    </div>
+  </section>
+
+  <section id="bibtex">
+    <div class="intro"><span class="eyebrow">Cite</span><h2>BibTeX</h2></div>
+    <pre class="bib" id="bib">@inproceedings{lee2024facial,
+  title     = {Study on Facial Composite Feature Analysis for Determining Subject Anxiety Levels on Low-Power Computing Modules},
+  author    = {Lee, JunGyu and Lee, Sanghyun Alex and Nam, Gi Pyo},
+  booktitle = {Proceedings of the IEIE Summer Annual Conference},
+  pages     = {1816--1820},
+  year      = {2024}
+}</pre>
+    <div><button class="btn" type="button" id="copyBib">Copy BibTeX</button></div>
+  </section>
+
+  <footer>
+    <p>Landmarks: <a href="https://arxiv.org/abs/2003.03771">Pixel-in-Pixel Net</a>. News content belongs to the respective broadcasters and publisher and is embedded or linked from their official channels.</p>
+    <p>© 2024 the authors · <a href="https://jungyu0413.github.io/">jungyu0413.github.io</a></p>
+  </footer>
+</div>
+
+<script>
+document.getElementById('copyBib').addEventListener('click', () => {
+  const b = document.getElementById('copyBib'); const pre = document.getElementById('bib');
+  const fallback = () => { const r = document.createRange(); r.selectNodeContents(pre); const s = getSelection(); s.removeAllRanges(); s.addRange(r); b.textContent = 'Selected — press Ctrl/⌘+C'; };
+  try { navigator.clipboard.writeText(pre.textContent).then(() => (b.textContent = 'Copied'), fallback); } catch (e) { fallback(); }
+});
+</script>
+</body>
+</html>

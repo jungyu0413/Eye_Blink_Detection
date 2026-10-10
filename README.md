@@ -4,6 +4,8 @@ This repository provides the eye-blink detection module that was part of the pap
 **"Study on Facial Composite Feature Analysis for Determining Subject Anxiety Levels on Low-Power Computing Modules"**,  
 presented at the **Summer Annual Conference of IEIE, 2024**.
 
+🌐 **Project page:** https://jungyu0413.github.io/Eye_Blink_Detection/
+
 This module focuses specifically on detecting eye blinks in real time as a key physiological signal for estimating subject anxiety levels.  
 The full system was designed to operate efficiently on low-power edge devices, such as embedded boards and real-time camera setups.
 
